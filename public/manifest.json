@@ -1,10 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "Super Ad Blocker",
+  "name": "Multi-Purpose Chrome Extension",
   "version": "1.0",
-  "description": "Blocks annoying ads!",
+  "description": "An extension that can do multiple things!",
   "action": {
-    "default_popup": "index.html"
+    "default_popup": "index.html",
+    "default_icon": {
+      "48": "icons/icon48.png"
+    }
   },
   "background": {
     "service_worker": "background.js"
@@ -12,9 +15,22 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"]
+      "js": ["content.js"],
+      "run_at": "document_start"
     }
   ],
-  "permissions": ["storage", "scripting", "activeTab","tabs","idle","alarms", "notifications"],
-  "host_permissions": ["<all_urls>"]
+  "permissions": [
+    "storage",
+    "scripting",
+    "activeTab",
+    "tabs",
+    "idle",
+    "alarms",
+    "notifications"
+  ],
+  "host_permissions": ["<all_urls>"],
+  "icons": {
+  
+    "48": "icons/icon48.png"
+  }
 }

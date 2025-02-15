@@ -69,6 +69,8 @@ chrome.runtime.onMessage.addListener((message) => {
         chrome.storage.local.set({ blockedAds: blockedAdsCount });
     }
 });
+
+
 // Productivity Tracker - Background Script
 let activeTab = null;
 let startTime = null;
@@ -86,41 +88,44 @@ function updateTimeSpent() {
   if (!activeTab || !startTime) return;
 
   const url = new URL(activeTab);
-  if (!url.hostname || url.hostname === "newtab") return; // Ignore New Tab and blank URLs
+  if (!url.hostname || url.hostname === "newtab") return;
 
   const endTime = Date.now();
-  const timeSpent = (endTime - startTime) / 1000; // Convert to seconds
+  const timeSpent = (endTime - startTime) / 1000;
   const domain = url.hostname;
 
   siteTime[domain] = (siteTime[domain] || 0) + timeSpent;
-  startTime = Date.now(); // Reset start time
+  startTime = Date.now();
 
-  // Save updated time data
   chrome.storage.local.set({ siteTime });
 
-  // 🚀 Notify if time limit exceeded
+  console.log(`Time spent on ${domain}: ${siteTime[domain]} seconds`);
+  console.log(`Daily limit for ${domain}: ${dailyLimits[domain]} seconds`);
+
   if (dailyLimits[domain] && siteTime[domain] >= dailyLimits[domain]) {
+    console.log(`Limit exceeded for ${domain}. Notifying user...`);
     notifyLimitExceeded(domain);
   }
 }
 
-// Function to notify user when limit is exceeded
 function notifyLimitExceeded(domain) {
+  console.log(`Creating notification for ${domain}`);
   chrome.notifications.create(
     {
       type: "basic",
-      iconUrl: "./icons/icons-alert.png", // Make sure this file exists!
+      iconUrl: "icons/icon48.png",
       title: "Time Limit Reached",
       message: `You've reached your daily limit for ${domain}.`,
     },
     (notificationId) => {
       if (chrome.runtime.lastError) {
         console.error("Notification Error:", chrome.runtime.lastError);
+      } else {
+        console.log("Notification shown successfully:", notificationId);
       }
     }
   );
 }
-
 // Function to handle tab activation
 function handleTabActivated(activeInfo) {
   chrome.tabs.get(activeInfo.tabId, (tab) => {
@@ -186,7 +191,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 const categories = {
     "Social Media": ["facebook.com", "twitter.com", "instagram.com", "linkedin.com", "tiktok.com"],
     "Work": ["mail.google.com", "slack.com", "notion.so", "docs.google.com", "jira.com"],
-    "News": ["bbc.com", "cnn.com", "nytimes.com", "theguardian.com"]
+    "News": ["bbc.com", "cnn.com", "nytimes.com", "theguardian.com"],
+    "Shopping": ["amazon.in", "ebay.com", "walmart.com", "target.com","flipkart.com"],
   };
   
   // Function to categorize open tabs
@@ -197,6 +203,7 @@ function categorizeTabs(callback) {
         "Social Media": [],
         "Work": [],
         "News": [],
+        "Shopping": [],
         "Other": []
       };
   
@@ -251,3 +258,5 @@ function categorizeTabs(callback) {
     }
   });
   
+
+

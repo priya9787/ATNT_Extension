@@ -122,20 +122,29 @@ function Notes() {
           <h4>📌 Local Notes</h4>
           <ul>
             {localNotes.map((note) => (
-              <li key={note.id}>
-                {editingId === note.id ? (
-                  <>
-                    <input value={editInput} onChange={(e) => setEditInput(e.target.value)} />
-                    <button onClick={updateNote}>Save</button>
-                  </>
-                ) : (
-                  <>
-                    {note.text}
-                    <button onClick={() => startEditing(note.id, note.text)}>Edit</button>
-                    <button onClick={() => deleteNote(note.id)}>Delete</button>
-                  </>
-                )}
-              </li>
+           <ul style={{ padding: "0", listStyleType: "none" }}>
+           {notes.map((note) => (
+             <li
+               key={note.id}
+               style={{
+                 display: "flex",
+                 alignItems: "center",
+                 justifyContent: "space-between",
+                 padding: "5px 0",
+               }}
+             >
+               <span style={{ flexGrow: 1, display: "flex", alignItems: "center"}}>
+                 🔹 <span>{note.text}</span> {/* Bullet point and note text */}
+               </span>
+         
+               <div style={{ display: "flex", gap: "5px" }}>
+                 <button onClick={() => startEditing(note.id, note.text)}>Edit</button>
+                 <button onClick={() => deleteNote(note.id)}>Delete</button>
+               </div>
+             </li>
+           ))}
+         </ul>
+         
             ))}
           </ul>
         </div>

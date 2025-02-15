@@ -1,7 +1,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import popup from "./popup"; // Import Popup component
-import "./index.css";
+import "./styles.css";
 
 const container = document.getElementById("root");
 const root = createRoot(container);

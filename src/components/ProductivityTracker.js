@@ -60,6 +60,7 @@ const ProductivityTracker = () => {
               <td>
                 <input
                   type="number"
+                  style={{ width: "60px" }} 
                   value={newLimit[domain] || ""}
                   onChange={(e) =>
                     setNewLimit((prev) => ({
@@ -76,9 +77,11 @@ const ProductivityTracker = () => {
                 </button>
               </td>
             </tr>
+            
           ))}
         </tbody>
       </table>
+
       <button onClick={handleReset}>Reset Time</button>
     </div>
   );

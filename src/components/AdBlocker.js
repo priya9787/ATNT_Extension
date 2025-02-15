@@ -7,11 +7,25 @@ const AdBlocker = () => {
   const [newFilter, setNewFilter] = useState("");
 
   useEffect(() => {
+    // Load initial settings
     chrome.storage.local.get(["adBlockerEnabled", "blockedAds", "customFilters"], (data) => {
       setEnabled(data.adBlockerEnabled || false);
       setBlockedAds(data.blockedAds || 0);
       setCustomFilters(data.customFilters || []);
     });
+
+    // Listen for storage changes to update blocked ads count dynamically
+    const handleStorageChange = (changes) => {
+      if (changes.blockedAds) {
+        setBlockedAds(changes.blockedAds.newValue || 0);
+      }
+    };
+
+    chrome.storage.onChanged.addListener(handleStorageChange);
+
+    return () => {
+      chrome.storage.onChanged.removeListener(handleStorageChange);
+    };
   }, []);
 
   const toggleAdBlocker = () => {
@@ -72,4 +86,3 @@ const AdBlocker = () => {
 };
 
 export default AdBlocker;
-
