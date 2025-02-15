@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import AdBlocker from "./components/AdBlocker";
 import ProductivityTracker from "./components/ProductivityTracker";  // Import Tracker
 import Notes from "./components/Notes";
+import TabManager from "./components/TabManager";
 
 const Popup = () => {
   return (
@@ -11,6 +12,7 @@ const Popup = () => {
       <AdBlocker />
       <ProductivityTracker />  {/* Include Tracker */}
       <Notes />
+      <TabManager />
     </div>
   );
 };

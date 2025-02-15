@@ -1,23 +1,33 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 const TabManager = () => {
-  const groupTabs = async () => {
-    const tabs = await chrome.tabs.query({});
-    const categories = { Social: [], Work: [], News: [] };
+  const [categorizedTabs, setCategorizedTabs] = useState({});
+  const [savedSession, setSavedSession] = useState([]);
 
-    tabs.forEach((tab) => {
-      if (tab.url.includes("facebook") || tab.url.includes("twitter")) {
-        categories.Social.push(tab.id);
-      } else if (tab.url.includes("gmail") || tab.url.includes("docs")) {
-        categories.Work.push(tab.id);
-      } else {
-        categories.News.push(tab.id);
-      }
+  useEffect(() => {
+    chrome.runtime.sendMessage({ action: "getCategorizedTabs" }, (response) => {
+      setCategorizedTabs(response || {});
     });
 
-    Object.values(categories).forEach((group) => {
-      if (group.length > 0) {
-        chrome.tabs.group({ tabIds: group });
+    chrome.storage.local.get(["savedSession"], (data) => {
+      setSavedSession(data.savedSession || []);
+    });
+  }, []);
+
+  const saveSession = () => {
+    chrome.runtime.sendMessage({ action: "saveSession", session: Object.values(categorizedTabs).flat() }, (response) => {
+      if (response.success) {
+        setSavedSession(Object.values(categorizedTabs).flat());
+      }
+    });
+  };
+
+  const restoreSession = () => {
+    chrome.runtime.sendMessage({ action: "restoreSession" }, (response) => {
+      if (response.success) {
+        alert("Session Restored!");
+      } else {
+        alert("No session saved!");
       }
     });
   };
@@ -25,7 +35,35 @@ const TabManager = () => {
   return (
     <div>
       <h3>Tab Manager</h3>
-      <button onClick={groupTabs}>Group Tabs</button>
+
+      <button onClick={saveSession}>Save Session</button>
+      <button onClick={restoreSession}>Restore Session</button>
+
+      {Object.entries(categorizedTabs).map(([category, tabs]) => (
+        <div key={category}>
+          <h4>{category} ({tabs.length})</h4>
+          <ul>
+            {tabs.map((tab) => (
+              <li key={tab.id}>
+                <a href={tab.url} target="_blank" rel="noopener noreferrer">
+                  {tab.title}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+
+      <h4>Saved Session</h4>
+      <ul>
+        {savedSession.map((tab, index) => (
+          <li key={index}>
+            <a href={tab.url} target="_blank" rel="noopener noreferrer">
+              {tab.title}
+            </a>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };
