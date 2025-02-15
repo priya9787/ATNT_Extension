@@ -69,3 +69,112 @@ chrome.runtime.onMessage.addListener((message) => {
         chrome.storage.local.set({ blockedAds: blockedAdsCount });
     }
 });
+// Productivity Tracker - Background Script
+let activeTab = null;
+let startTime = null;
+let siteTime = {}; // Stores time spent per site
+let dailyLimits = {}; // Stores daily limits for each site
+
+// Load stored data on extension startup
+chrome.storage.local.get(["siteTime", "dailyLimits"], (data) => {
+  siteTime = data.siteTime || {};
+  dailyLimits = data.dailyLimits || {};
+});
+
+// Function to update time spent on active site
+function updateTimeSpent() {
+  if (!activeTab || !startTime) return;
+
+  const url = new URL(activeTab);
+  if (!url.hostname || url.hostname === "newtab") return; // Ignore New Tab and blank URLs
+
+  const endTime = Date.now();
+  const timeSpent = (endTime - startTime) / 1000; // Convert to seconds
+  const domain = url.hostname;
+
+  siteTime[domain] = (siteTime[domain] || 0) + timeSpent;
+  startTime = Date.now(); // Reset start time
+
+  // Save updated time data
+  chrome.storage.local.set({ siteTime });
+
+  // 🚀 Notify if time limit exceeded
+  if (dailyLimits[domain] && siteTime[domain] >= dailyLimits[domain]) {
+    notifyLimitExceeded(domain);
+  }
+}
+
+// Function to notify user when limit is exceeded
+function notifyLimitExceeded(domain) {
+  chrome.notifications.create(
+    {
+      type: "basic",
+      iconUrl: "./icons/icons-alert.png", // Make sure this file exists!
+      title: "Time Limit Reached",
+      message: `You've reached your daily limit for ${domain}.`,
+    },
+    (notificationId) => {
+      if (chrome.runtime.lastError) {
+        console.error("Notification Error:", chrome.runtime.lastError);
+      }
+    }
+  );
+}
+
+// Function to handle tab activation
+function handleTabActivated(activeInfo) {
+  chrome.tabs.get(activeInfo.tabId, (tab) => {
+    if (chrome.runtime.lastError || !tab || !tab.url) return;
+    if (tab.url.startsWith("chrome://") || tab.url === "about:blank") return; // Ignore new tabs
+
+    updateTimeSpent();
+    activeTab = tab.url;
+    startTime = Date.now();
+  });
+}
+
+// Function to handle tab updates (URL changes)
+function handleTabUpdated(tabId, changeInfo, tab) {
+  if (!tab.url || tab.url.startsWith("chrome://") || tab.url === "about:blank") return;
+
+  if (changeInfo.status === "complete") {
+    updateTimeSpent();
+    activeTab = tab.url;
+    startTime = Date.now();
+  }
+}
+
+// Function to handle browser idle state
+function handleIdleStateChange(state) {
+  if (state === "idle" || state === "locked") {
+    updateTimeSpent();
+    activeTab = null;
+  } else if (state === "active" && activeTab) {
+    startTime = Date.now();
+  }
+}
+
+// Register the event listeners
+chrome.tabs.onActivated.addListener(handleTabActivated);
+chrome.tabs.onUpdated.addListener(handleTabUpdated);
+chrome.idle.onStateChanged.addListener(handleIdleStateChange);
+
+// Handle messages from popup.js
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === "getTimeSpent") {
+    sendResponse({ siteTime, dailyLimits });
+  } else if (message.action === "resetTime") {
+    siteTime = {};
+    chrome.storage.local.set({ siteTime });
+    sendResponse({ success: true });
+  } else if (message.action === "setDailyLimit") {
+    dailyLimits[message.domain] = message.limit;
+    
+    // Save updated limits to storage
+    chrome.storage.local.set({ dailyLimits }, () => {
+      sendResponse({ success: true });
+    });
+
+    return true; // Ensure async response works
+  }
+});
